@@ -1,0 +1,150 @@
+---
+title: "advent-of-code-2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,error = FALSE,warning = FALSE, message = FALSE)
+```
+
+My submissions for the [2020 Advent of Code Contest](https://adventofcode.com/).  I've been doing the contest in the R language.
+
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(scales)
+library(ggtext)
+library(ggrepel)
+library(showtext)
+
+font_add_google(name = "Source Code Pro", family = 'source-code-pro')
+showtext_auto()
+
+
+```
+
+## Some AoC 2020 Stats
+
+```{r echo=FALSE}
+library(tidyverse)
+library(rvest)
+library(scales)
+library(ggtext)
+library(ggrepel)
+library(showtext)
+
+##Import Google Font
+font_add_google(name = "Source Code Pro", family = 'source-code-pro')
+showtext_auto()
+
+#Build Custom Theme
+theme_set(
+  cowplot::theme_cowplot() +
+  theme(
+    text = element_text(color = '#009900', family = 'source-code-pro'),
+    plot.title = element_markdown(color = '#cccccc'),
+    plot.title.position = 'plot',
+    plot.background = element_rect(fill = '#0f0f23'),
+    axis.text = element_text(color = "#009900"),
+    axis.line = element_line(color = "#009900"),
+    axis.title =element_text(color = "#cccccc"),
+    axis.ticks = element_line(color = '#009900')
+  )
+)
+
+#Scrape Stats Page
+raw_stats <- read_html('https://adventofcode.com/2020/stats') %>% 
+  html_nodes(css = '.stats') %>% 
+  html_text()
+
+stats <- str_split(raw_stats, '\\n') %>% 
+  unlist() %>%
+  str_trim() %>% 
+  str_replace_all(' +', '-') %>% 
+  tibble(raw = .) %>% 
+  extract(raw, c('day', 'num_gold', 'num_silver'), 
+          regex = '(\\d+)-(\\d+)-(\\d+)', 
+          convert = T) %>% 
+  filter(!is.na(day), num_gold > 0) %>%
+  filter(!day==max(day)) %>% 
+  arrange(day) %>% 
+  mutate(
+    total_completions = num_gold + num_silver,
+    pct_retained_from_prior = (total_completions/lag(total_completions)),
+    pct_retained_from_start = (total_completions/max(total_completions))
+  )
+
+
+
+
+### Number of Completions By Day
+stats %>%
+  ggplot(aes(x = factor(day), y = total_completions)) + 
+  geom_point(color = '#009900') + 
+  geom_line(group = 1, color = '#009900') + 
+  geom_text_repel(aes(label = if_else(day %in% range(day),
+                                paste0(round(total_completions/1000, 1), 
+                                       'K (',
+                                       pct_retained_from_start %>% 
+                                               percent(accuracy = 1),
+                                               ')'
+                                       ), '')),
+            color = "#009900") + 
+  scale_y_continuous(labels = comma) + 
+  labs(x = "Day", y = "",
+       title = "<i style = 'color:#009900'>Advent of Code 2020:</i> # of Completions by Day",
+       subtitle = "Number of Completions (% of Day 1 Completions)",
+       caption = paste0("Run on ", Sys.Date())
+  )
+  
+
+### Drop Off From Prior Day
+stats %>%
+  filter(day > 1) %>% 
+  ggplot(aes(x = factor(day), y = 1-pct_retained_from_prior)) + 
+  geom_point(color = '#009900') + 
+  geom_line(group = 1, color = '#009900') + 
+  geom_text_repel(aes(label = (1-pct_retained_from_prior) 
+                      %>% percent(accuracy = 1))
+                      , color = "#009900") + 
+  scale_y_continuous(labels = percent) + 
+  labs(x = "Day", y = "",
+       title = "<i style = 'color:#009900'>Advent of Code 2020:</i> Drop-Off From Prior Day",
+       caption = paste0("Run on ", Sys.Date())
+       ) 
+
+
+## Distribution of Gold vs. Silvers
+stats %>% 
+  transmute(day, 
+            `Completed Both Parts` = num_gold, 
+            `Completed Part 1 Only` = num_silver) %>% 
+  pivot_longer(cols = contains('Completed'),
+               names_to = 'completion_level',
+               values_to = 'num_completed') %>% 
+  group_by(day) %>% 
+  mutate(pct = num_completed / sum(num_completed)) %>% 
+  ggplot(aes(factor(day), y = pct, fill = fct_rev(completion_level),
+             label = pct %>% percent(accuracy = 1))) + 
+    geom_col() + 
+    geom_text(color = '#009900',
+              position = position_stack(vjust = .5)) + 
+  scale_fill_manual(values = c('Completed Both Parts' = '#ffff66',
+                               'Completed Part 1 Only' = '#9999cc'),
+                    guide = guide_legend(reverse = T)) + 
+  labs(x = "Day", y = "", fill = '',
+       title = "<i style = 'color:#009900'>Advent of Code 2020:</i> Distribution of Completions",
+       caption = paste0("Run on ", Sys.Date())) + 
+  expand_limits(x = 1, y = 0) + 
+  scale_y_continuous(expand = c(0,0)) + 
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = 'bottom',
+    legend.justification = 'center',
+    
+  )
+
+```
+
