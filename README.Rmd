@@ -27,17 +27,6 @@ showtext_auto()
 ## Some AoC 2020 Stats
 
 ```{r echo=FALSE}
-library(tidyverse)
-library(rvest)
-library(scales)
-library(ggtext)
-library(ggrepel)
-library(showtext)
-
-##Import Google Font
-font_add_google(name = "Source Code Pro", family = 'source-code-pro')
-showtext_auto()
-
 #Build Custom Theme
 theme_set(
   cowplot::theme_cowplot() +
