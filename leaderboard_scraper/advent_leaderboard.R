@@ -50,7 +50,9 @@ dt2 <- content(dt, encoding='UTF-8') %>%
 
 
 ######## Who Had the Quickest Time Between part 1 and part 2?
+####(Excludes Day 25)
 dt2 %>% 
+  filter(day_id != 25) %>% 
   mutate(diff = difftime(star_2, star_1, units = 'secs')) %>%
   arrange(diff) %>% 
   slice(1:10)
@@ -84,6 +86,11 @@ dt2 %>%
   select(name, day_id, complete_time)
 
 ######## Completions Per Hour?
+ann <- data.frame(star = rep("Star 1", 3),
+                  x = c(4.5, 13.5, 21),
+                  y = rep(40, 3),
+                  lbl = c('Before Work\n(<10am)', 'Work Hours\n(10am-6pm)', 'After Work\n(>6pm)'))
+
 dt2 %>% 
   select(star_1, star_2) %>% 
   gather(star, time) %>% 
@@ -93,6 +100,11 @@ dt2 %>%
   count(star, hr) %>% 
   ggplot(aes(x = hr, y = n, fill = star)) + 
     geom_col() + 
+    geom_vline(aes(xintercept = 9.5), lty = 2, color = "#009900") + 
+    geom_vline(aes(xintercept = 17.5), lty = 2, color = "#009900") + 
+    geom_text(data = ann,
+      aes(x = x, y=y, label = lbl), hjust = 'center',
+      color = '#009900', family = 'source-code-pro') + 
     labs(x = "Hour of Day (ET)", y = "# of Completion",
          title = "What Hour of the Day Are Stars Being Earned?") + 
     scale_fill_manual(values = c('Star 2' = '#ffff66',
@@ -148,7 +160,7 @@ dt2 %>%
   filter(!is.na(star_2)) %>%
   group_by(day_id) %>% 
   mutate(start_time = min(floor_date(star_2, 'day')),
-         complete_time = difftime(star_2, start_time, units="mins")
+         complete_time = difftime(star_2, start_time, units="hours")
   ) %>%
   summarize(
     completions = n(),
