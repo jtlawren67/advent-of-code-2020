@@ -56,7 +56,6 @@ stats <- str_split(raw_stats, '\\n') %>%
           regex = '(\\d+)-(\\d+)-(\\d+)', 
           convert = T) %>% 
   filter(!is.na(day), num_gold > 0) %>%
-  filter(!day==max(day)) %>% 
   arrange(day) %>% 
   mutate(
     total_completions = num_gold + num_silver,
@@ -118,7 +117,8 @@ stats %>%
              label = pct %>% percent(accuracy = 1))) + 
     geom_col() + 
     geom_text(color = '#009900',
-              position = position_stack(vjust = .5)) + 
+              position = position_stack(vjust = .5),
+              size = 3) + 
   scale_fill_manual(values = c('Completed Both Parts' = '#ffff66',
                                'Completed Part 1 Only' = '#9999cc'),
                     guide = guide_legend(reverse = T)) + 
