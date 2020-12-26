@@ -68,10 +68,12 @@ dt2 %>%
   filter(!is.na(star_1)) %>%
   group_by(day_id) %>% 
   mutate(start_time = min(floor_date(star_1, 'day')),
-         complete_time = difftime(star_1, start_time, units = 'mins')
+         complete_time = difftime(star_1, start_time, units = 'secs')
          ) %>%
   arrange(complete_time) %>% 
-  select(name, day_id, complete_time)
+  transmute(name, day_id, complete_time = paste0(as.numeric(complete_time)%/%60,
+                                                 ":",
+                                                 as.numeric(complete_time)%%60))
   
 
 
@@ -80,10 +82,12 @@ dt2 %>%
   filter(!is.na(star_2)) %>%
   group_by(day_id) %>% 
   mutate(start_time = min(floor_date(star_2, 'day')),
-         complete_time = difftime(star_2, start_time, units = "mins")
+         complete_time = difftime(star_2, start_time, units = "secs")
          )%>%
   arrange(complete_time) %>% 
-  select(name, day_id, complete_time)
+  transmute(name, day_id, complete_time = paste0(as.numeric(complete_time)%/%60,
+                                                 ":",
+                                                 as.numeric(complete_time)%%60))
 
 ######## Completions Per Hour?
 ann <- data.frame(star = rep("Star 1", 3),
